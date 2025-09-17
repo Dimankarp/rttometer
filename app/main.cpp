@@ -1,6 +1,7 @@
 #include "abort.h"
 #include "sys/socket.h"
 #include "sys/types.h"
+#include <arpa/inet.h>
 #include <csignal>
 #include <cstdio>
 #include <iostream>
@@ -15,6 +16,31 @@ namespace {
 void server_sig_handler(int signum) {
     std::print("Interrupted");
     exit(0);
+}
+
+void client_sig_handler(int signum) {
+    std::print("Interrupted");
+    exit(0);
+}
+
+void client_routine(in_addr ip, in_port_t port) {
+
+    struct sigaction sa = { client_sig_handler };
+    sigaction(SIGINT, &sa, nullptr);
+
+
+    auto udp = socket(AF_INET, SOCK_DGRAM, UDP_PROTOCOL);
+    if(udp == -1) {
+        rtt::perror_abort("Failed to create socket\n");
+    }
+
+    const struct sockaddr_in addr{ .sin_family = AF_INET,
+                                   .sin_port = htons(port),
+                                   .sin_addr = { .s_addr = ip.s_addr },
+                                   .sin_zero = {} };
+    static const char* text = "test";
+    for(int i = 0; i < 10; i++)
+        sendto(udp, text, 5, 0, (const struct sockaddr*)&addr, sizeof(addr));
 }
 
 
@@ -42,14 +68,20 @@ void server_routine(in_port_t port) {
         if(ret == -1)
             rtt::perror_abort("Failed to receive msg\n");
         buf[ret] = 0;
-        std::cout << std::string{ buf.data() };
+        std::cout << std::string{ buf.data(), 0, static_cast<size_t>(ret) };
     }
 }
 } // namespace
 
 
-
 int main(int argc, char** args) {
     std::print("This is gonna be an RTTometer\n");
-    server_routine(6556);
+    if(argc > 1 && std::string{ args[1] } == "-s")
+        server_routine(6556);
+    else {
+        const char* ip = "127.0.0.1";
+        struct in_addr addr{};
+        inet_aton(ip, &addr);
+        client_routine(addr, 6556);
+    }
 }
