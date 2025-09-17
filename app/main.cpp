@@ -29,7 +29,7 @@ void client_handshake(int sock, const struct sockaddr_in& addr) {
     auto ret = sendto(sock, handshake_msg.data(), handshake_msg.size(), 0,
                       (const struct sockaddr*)&addr, sizeof(addr));
     if(ret == -1)
-        rtt::perror_abort("Failed to send handshake to {}", inet_ntoa(addr.sin_addr));
+        rtt::perror_abort("Failed to send handshake to {}\n", inet_ntoa(addr.sin_addr));
 
     std::array<char, 256> buf{};
     ret = recv(sock, buf.data(), buf.size(), 0);
@@ -37,7 +37,7 @@ void client_handshake(int sock, const struct sockaddr_in& addr) {
         rtt::perror_abort("Failed to receive handshake from {} \n",
                           inet_ntoa(addr.sin_addr));
     if(ret != handshake_msg.size() || handshake_msg != buf.data())
-        rtt::abort("Handshake msg malformed");
+        rtt::abort("Handshake msg malformed\n");
 }
 
 struct sockaddr_in server_handshake(int sock, const struct sockaddr_in& addr) {
@@ -62,7 +62,8 @@ struct sockaddr_in server_handshake(int sock, const struct sockaddr_in& addr) {
 
 void client_routine(in_addr ip, in_port_t port) {
 
-    struct sigaction sa = { client_sig_handler };
+    struct sigaction sa{};
+    sa.sa_handler = client_sig_handler;
     sigaction(SIGINT, &sa, nullptr);
 
 
@@ -86,7 +87,8 @@ void client_routine(in_addr ip, in_port_t port) {
 
 void server_routine(in_port_t port) {
 
-    struct sigaction sa = { server_sig_handler };
+    struct sigaction sa{};
+    sa.sa_handler = server_sig_handler;
     sigaction(SIGINT, &sa, nullptr);
 
     auto udp = socket(AF_INET, SOCK_DGRAM, UDP_PROTOCOL);
