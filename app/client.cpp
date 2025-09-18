@@ -10,6 +10,7 @@
 #include <optional>
 #include <sys/epoll.h>
 #include <sys/timerfd.h>
+#include <unistd.h>
 namespace rtt {
 namespace {
 int socket_to_close_fd = -1;
