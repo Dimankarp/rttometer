@@ -20,7 +20,9 @@ static const std::string HELP_STR =
 "-n <num>: Do <num> measures and exit. Client-mode only\n"
 "-p <num>: Client packet sending period in microseconds. Client-mode only\n"
 "(ip): Server IPv4 address. Mandatory for client-mode\n"
-"port: Server port. Mandatory\n";
+"port: Server port. Mandatory\n"
+"Notice: Client outputs data in format:\n"
+"<client_request_mcs> <server_reply_mcs> <client_side_rtt_mcs>\n";
 
 int main(int argc, char* const* argv) {
     rtt::Context ctx{};

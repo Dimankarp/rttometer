@@ -9,3 +9,7 @@ build
 
 ### Bear ###
 compile_commands.json
+
+
+### Collected Data ###
+measures/

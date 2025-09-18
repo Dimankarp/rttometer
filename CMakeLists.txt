@@ -9,19 +9,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${CMAKE_CURRENT_SOURCE_DIR}/app
     ${PROJECT_BINARY_DIR}
 )
 
-file(GLOB_RECURSE LIB_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
-file(GLOB_RECURSE APP_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/app/*.cpp")
-
-
-add_library(rttometer_lib STATIC
-    ${LIB_SOURCES}
-)
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp")
 
 add_executable(rttometer
-    ${APP_SOURCES}
+    ${SOURCES}
 )
-target_link_libraries(rttometer PRIVATE rttometer_lib)

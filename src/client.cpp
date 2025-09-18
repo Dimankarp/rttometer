@@ -1,6 +1,7 @@
 #include "client.h"
 #include "abort.h"
 #include "print"
+#include "serialize.h"
 #include <arpa/inet.h>
 #include <chrono>
 #include <csignal>
@@ -14,9 +15,11 @@
 namespace rtt {
 namespace {
 int socket_to_close_fd = -1;
+std::ostream* stream_to_flush;
 void client_sig_handler(int /*signum*/) {
     std::print(std::cerr, "Interrupted\n");
     close(socket_to_close_fd);
+    (*stream_to_flush) << std::flush;
     exit(0);
 }
 
@@ -26,7 +29,8 @@ const std::string handshake_msg = "hello";
 
 
 struct Rtt {
-    unsigned long start_mcs;
+    unsigned long client_request_mcs;
+    unsigned long server_reply_mcs;
     unsigned long rtt_mcs;
 };
 
@@ -47,22 +51,31 @@ void client_handshake(int sock, const sockaddr_in& addr) {
 }
 
 void send_time(int udp, const sockaddr_in& addr, auto now) {
-    auto now_mcs =
+    uint64_t now_mcs =
     std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch())
     .count();
-    sendto(udp, &now_mcs, sizeof(now_mcs), 0, (const sockaddr*)&addr, sizeof(addr));
+    std::array<char, sizeof(now_mcs)> buf;
+    auto it = buf.data();
+    serial::write_uint64(now_mcs, it);
+    sendto(udp, buf.data(), sizeof(now_mcs), 0, (const sockaddr*)&addr, sizeof(addr));
 }
 
 Rtt receive_rtt(int udp, void* buf, std::size_t buf_sz) {
     auto ret = recv(udp, buf, buf_sz, 0);
-    auto start_mcs = *(long*)buf;
+
+    auto iter = (char*)buf;
+
+    auto client_start_mcs = serial::read_uint64(iter);
+    auto server_reply_mcs = serial::read_uint64(iter);
+
     auto now = std::chrono::high_resolution_clock::now();
     auto now_mcs =
     std::chrono::duration_cast<std::chrono::microseconds>(now.time_since_epoch())
     .count();
-    auto rtt = now_mcs - start_mcs;
-    return { .start_mcs = static_cast<unsigned long>(start_mcs),
-             .rtt_mcs = static_cast<unsigned long>(rtt) };
+    auto rtt = now_mcs - client_start_mcs;
+    return { .client_request_mcs = client_start_mcs,
+             .server_reply_mcs = server_reply_mcs,
+             .rtt_mcs = rtt };
 }
 } // namespace
 
@@ -79,6 +92,7 @@ void client_routine(const rtt::Context& ctx) {
 
 
     socket_to_close_fd = udp;
+    stream_to_flush = &out;
     struct sigaction sa{};
     sa.sa_handler = client_sig_handler;
     sigaction(SIGINT, &sa, nullptr);
@@ -142,9 +156,11 @@ void client_routine(const rtt::Context& ctx) {
             } else if(fd == udp) {
                 auto rtt = receive_rtt(udp, buf.data(), buf.size());
                 if(ctx.is_verbose)
-                    std::print("Start: {} | rtt: {}\n", rtt.start_mcs, rtt.rtt_mcs);
+                    std::print("Start: {} | Reply: {} | RTT: {}\n", rtt.client_request_mcs,
+                               rtt.server_reply_mcs, rtt.rtt_mcs);
 
-                out << rtt.start_mcs << " " << rtt.rtt_mcs << "\n";
+                out << rtt.client_request_mcs << " " << rtt.server_reply_mcs
+                    << " " << rtt.rtt_mcs << "\n";
                 if(is_limited)
                     received++;
             }
