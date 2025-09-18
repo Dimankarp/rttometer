@@ -2,7 +2,6 @@
 #include "context.h"
 #include "sys/socket.h"
 #include <arpa/inet.h>
-#include <bits/getopt_core.h>
 #include <chrono>
 #include <csignal>
 #include <cstdio>
@@ -13,6 +12,7 @@
 #include <stdexcept>
 #include <string>
 #include <sys/epoll.h>
+#include <unistd.h>
 
 const static int UDP_PROTOCOL = 17;
 
