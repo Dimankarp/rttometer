@@ -85,7 +85,7 @@ void client_routine(const rtt::Context& ctx) {
                                    .sin_addr = { .s_addr = ctx.ip.value().s_addr },
                                    .sin_zero = {} };
 
-    client_handshake(udp, addr);
+    // client_handshake(udp, addr);
 
 
     static const char* text = "hello\n";
@@ -159,6 +159,7 @@ void server_routine(const rtt::Context& ctx) {
 
         buf[ret] = 0;
         std::cout << std::string{ buf.data(), 0, static_cast<size_t>(ret) } << "\n";
+        std::print("Sending back to {}:{}", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
         sendto(udp, buf.data(), ret, 0, (struct sockaddr*)&client_addr, addr_len);
     }
 }
