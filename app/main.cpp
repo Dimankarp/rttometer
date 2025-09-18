@@ -3,7 +3,6 @@
 #include "context.h"
 #include "server.h"
 #include <arpa/inet.h>
-#include <bits/getopt_core.h>
 #include <iostream>
 #include <limits>
 #include <netinet/in.h>
