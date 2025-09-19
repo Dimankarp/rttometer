@@ -6,7 +6,6 @@
 #include <chrono>
 #include <csignal>
 #include <cstdint>
-#include <cstdio>
 #include <iostream>
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -65,7 +64,7 @@ void server_routine(const rtt::Context& ctx) {
                            std::chrono::high_resolution_clock::now().time_since_epoch())
                            .count();
 
-             char* it = buf.data() + ret;
+            char* it = buf.data() + ret;
             serial::write_uint64(now, it);
             it = buf.data();
             ret += sizeof(uint64_t);

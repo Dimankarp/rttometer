@@ -14,6 +14,8 @@
 #include <unistd.h>
 namespace rtt {
 namespace {
+
+
 int socket_to_close_fd = -1;
 std::ostream* stream_to_flush;
 void client_sig_handler(int /*signum*/) {
